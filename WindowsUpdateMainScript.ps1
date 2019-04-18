@@ -57,7 +57,7 @@ Get-Job | Remove-Job
 
 # Ensure the PSWindowsUpdate, PendingReboot and ImportExcel modules are installed on the local machine.
 
-if (-not (Get-InstalledModule -Name "PSWindowsUpdate" -ErrorAction SilentlyContinue) -or -not (Get-InstalledModule -Name "ImportExcel" -ErrorAction SilentlyContinue) -or -not (Get-InstalledModule -Name "PendingReboot" -ErrorAction SilentlyContinue))
+if (-not (Get-InstalledModule -Name "PSWindowsUpdate" -ErrorAction SilentlyContinue) -or -not (Get-InstalledModule -Name "ImportExcel" -ErrorAction SilentlyContinue) -or -not (Get-InstalledModule -Name "PendingReboot" -ErrorAction SilentlyContinue) -or -not (Get-InstalledModule -Name "PSParallel" -ErrorAction SilentlyContinue))
 {
 	try
 	{
