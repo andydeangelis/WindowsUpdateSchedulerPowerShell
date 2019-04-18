@@ -22,7 +22,7 @@ try
 		try
 		{
 			Set-ExecutionPolicy Unrestricted -Force
-			Write-Host "Installing PSWindowsUpdate module on" $computer -ForegroundColor Yellow
+			Write-Host "Installing PSWindowsUpdate and PendingReboot modules on" $computer -ForegroundColor Yellow
 			Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 			Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 			Install-Module -Name "PSWindowsUpdate" -Force -Scope AllUsers

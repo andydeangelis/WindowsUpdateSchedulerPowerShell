@@ -62,7 +62,7 @@ if (-not (Get-InstalledModule -Name "PSWindowsUpdate" -ErrorAction SilentlyConti
 	try
 	{
 		Set-ExecutionPolicy Unrestricted -Force
-		Write-Host "Installing PSWindowsUpdate,ImportExcel and PendingReboot modules on" $ENV:COMPUTERNAME -ForegroundColor Yellow
+		Write-Host "Installing PSWindowsUpdate,ImportExcel PSParallel and PendingReboot modules on" $ENV:COMPUTERNAME -ForegroundColor Yellow
 		Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force
 		Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted
 		Install-Module -Name "PSWindowsUpdate" -Force -Scope AllUsers
