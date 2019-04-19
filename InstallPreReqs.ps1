@@ -45,8 +45,8 @@ try
 			Set-ExecutionPolicy Unrestricted -Force
 			Import-Module PSWindowsUpdate
 			Import-Module PendingReboot
-			Update-WUModule -Online -Confirm:$false
-			Update-Module -Name "PendingReboot" -Force -Confirm:$false
+			Update-WUModule -Online -Confirm:$false -ErrorAction SilentlyContinue
+			Update-Module -Name "PendingReboot" -Force -Confirm:$false -ErrorAction SilentlyContinue
 			Write-Host "All required modules are up to date on" $computer -ForegroundColor Green
 		}
 		catch

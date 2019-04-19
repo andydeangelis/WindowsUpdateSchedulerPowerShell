@@ -91,10 +91,10 @@ else
 		Import-Module "ImportExcel"
 		Import-Module "PendingReboot"
 		Import-Module "PSParallel"
-		Update-WUModule -Online -Confirm:$false
-		Update-Module -Name "ImportExcel" -Force -Confirm:$false
-		Update-Module -Name "PendingReboot" -Force -Confirm:$false
-		Update-Module "PSParallel" -Force -Confirm:$false
+		Update-WUModule -Online -Confirm:$false -ErrorAction SilentlyContinue
+		Update-Module -Name "ImportExcel" -Force -Confirm:$false -ErrorAction SilentlyContinue
+		Update-Module -Name "PendingReboot" -Force -Confirm:$false -ErrorAction SilentlyContinue
+		Update-Module "PSParallel" -Force -Confirm:$false -ErrorAction SilentlyContinue
 		Write-Host "All required modules are up to date on" $ENV:COMPUTERNAME -ForegroundColor Green
 	}
 	catch
@@ -166,6 +166,13 @@ if (-not (Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\$datetime" -ErrorActio
 		try { New-Item -ItemType Directory -Name "$datetime" -Path "$PSScriptRoot\WSUS_Reports\UpdateHistoryReports" -ErrorAction Stop }
 		catch { "Directory $PSScriptRoot\WSUS_Reports\UpdateHistoryReports\$datetime already exists or access is denied." }
 	}
+	
+	try { New-Item -ItemType Directory -Name "FailedConnections" -Path "$PSScriptRoot\WSUS_Reports" -ErrorAction Stop }
+	catch { "Directory $PSScriptRoot\WSUS_Reports\FailedConnections already exists or access is denied." }
+	
+	try { New-Item -ItemType Directory -Name "$datetime" -Path "$PSScriptRoot\WSUS_Reports\FailedConnections" -ErrorAction Stop }
+	catch { "Directory $PSScriptRoot\WSUS_Reports\FailedConnections\$datetime already exists or access is denied." }
+	
 }
 
 # if the -NumThreads parameter is not set, we are going to determine the number of simultaneous jobs 
@@ -198,6 +205,8 @@ foreach ($computer in $remoteComputers)
 	$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985" -ErrorAction SilentlyContinue
 	$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986" -ErrorAction SilentlyContinue
 	
+	$failedComputerMessage = @()
+		
 	if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 	{
 		while (@(Get-Job | ?{ $_.State -eq "Running" }).Count -ge $NumJobs)
@@ -213,13 +222,17 @@ foreach ($computer in $remoteComputers)
 		}
 		catch
 		{
-			"Unable to connect to $($computer.Name)."
+			"Installing prerequisites failed on $($computer.Name)."
+			$failedComputerMessage += "Connection succeeded to $($computer.Name), but unable to install prerequisites."
 		}
 	}
 	else
 	{
 		Write-Host "Unable to connect to $($computer.Name)." -ForegroundColor Red
+		$failedComputerMessage += "Unable to connect to $($computer.Name) to install prerequisites."
 	}
+	
+	if ($failedComputerMessage) { Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedPreReqInstall_$datetime.log" }
 	
 }
 
@@ -276,6 +289,8 @@ if ($ListAvailableUpdates)
 		$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985" -ErrorAction SilentlyContinue
 		$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986" -ErrorAction SilentlyContinue
 		
+		$failedComputerMessage = @()
+		
 		if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 		{	
 			while (@(Get-Job | ?{ $_.State -eq "Running" }).Count -ge $NumJobs)
@@ -299,13 +314,17 @@ if ($ListAvailableUpdates)
 			}
 			catch
 			{
-				"Unable to connect to $($computer.Name)."
+				"Listing available updates failed on $($computer.Name)."
+				$failedComputerMessage += "Connection succeeded to $($computer.Name), but unable to retrieve available updates."
 			}
 		}
 		else
 		{
 			Write-Host "Unable to connect to $($computer.Name)." -ForegroundColor Red
+			$failedComputerMessage += "Unable to connect to $($computer.Name) to retrieve available updates."
 		}
+		
+		if ($failedComputerMessage) { Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedListAvailableUpdates_$datetime.log" }
 		
 	}
 	
@@ -382,6 +401,8 @@ if ($InstallUpdates)
 		$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985"
 		$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986"
 		
+		$failedComputerMessage = @()
+		
 		if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 		{
 			while (@(Get-Job | ?{ $_.State -eq "Running" }).Count -ge $NumJobs)
@@ -420,12 +441,16 @@ if ($InstallUpdates)
 			catch
 			{
 				"Unable to create scheduled task on $($computer.Name)."
+				$failedComputerMessage += "Connection succeeded to $($computer.Name), but unable to install updates."
 			}
 		}
 		else
 		{
 			Write-Host "Unable to connect to $($computer.Name)." -ForegroundColor Red
+			$failedComputerMessage += "Unable to connect to $($computer.Name) to install updates."
 		}
+		
+		if ($failedComputerMessage) { Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedInstalledUpdates_$datetime.log" }
 	}
 	
 	$jobs = (Get-Job)
@@ -559,6 +584,8 @@ if ($GetUpdateHistory)
 		$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985"
 		$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986"
 		
+		$failedComputerMessage = @()
+		
 		if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 		{
 			while (@(Get-Job | ?{ $_.State -eq "Running" }).Count -ge $NumJobs)
@@ -576,12 +603,16 @@ if ($GetUpdateHistory)
 			catch
 			{
 				"Unable to connect to $($computer.Name)."
+				$failedComputerMessage += "Connection succeeded to $($computer.Name), but unable to get update history."
 			}
 		}
 		else
 		{
 			Write-Host "Unable to connect to $($computer.Name)." -ForegroundColor Red
+			$failedComputerMessage += "Unable to connect to $($computer.Name) to get update history."
 		}
+		
+		if ($failedComputerMessage) { Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" }
 		
 	}
 	
