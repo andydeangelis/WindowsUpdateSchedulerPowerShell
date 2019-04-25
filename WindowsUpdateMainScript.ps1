@@ -200,13 +200,13 @@ Write-Host "Installing prerequisites for $($remoteComputers.Count) devices..." -
 $WUModuleInstallScript = Get-Content ".\InstallPreReqs.ps1" -Raw
 $preReqScriptBlock = [scriptblock]::Create($WUModuleInstallScript)
 
+$failedComputerPreReq = @()
+
 foreach ($computer in $remoteComputers)
 {
 	$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985" -ErrorAction SilentlyContinue
 	$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986" -ErrorAction SilentlyContinue
 	
-	$failedComputerMessage = @()
-		
 	if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 	{
 		while (@(Get-Job | ?{ $_.State -eq "Running" }).Count -ge $NumJobs)
@@ -223,18 +223,18 @@ foreach ($computer in $remoteComputers)
 		catch
 		{
 			"Installing prerequisites failed on $($computer.Name)."
-			$failedComputerMessage += "Connection succeeded to $($computer.Name), but unable to install prerequisites."
+			$failedComputerPreReq += "Connection succeeded to $($computer.Name), but unable to install prerequisites."
 		}
 	}
 	else
 	{
 		Write-Host "Unable to connect to $($computer.Name)." -ForegroundColor Red
-		$failedComputerMessage += "Unable to connect to $($computer.Name) to install prerequisites."
+		$failedComputerPreReq += "Unable to connect to $($computer.Name) to install prerequisites."
 	}
 	
-	if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedPreReqInstall_$datetime.log" -Append }
-	
 }
+
+if ($failedComputerPreReq) { $failedComputerPreReq | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedPreReqInstall_$datetime.log" -Append }
 
 # Now we wait until all jobs have completed.
 
@@ -283,13 +283,13 @@ if ($ListAvailableUpdates)
 	$newScriptContent = $getWUContent + "`nGet-MicrosoftUpdate"
 	$ListScriptBlock = [scriptblock]::Create($newScriptContent)
 	
+	$failedComputerMessage = @()
+	
 	Write-Host "Processing jobs for $($remoteComputers.Count) devices..." -ForegroundColor Green
 	foreach ($computer in $remoteComputers)
 	{
 		$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985" -ErrorAction SilentlyContinue
 		$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986" -ErrorAction SilentlyContinue
-		
-		$failedComputerMessage = @()
 		
 		if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 		{	
@@ -324,9 +324,9 @@ if ($ListAvailableUpdates)
 			$failedComputerMessage += "Unable to connect to $($computer.Name) to retrieve available updates."
 		}
 		
-		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedListAvailableUpdates_$datetime.log" -Append }
-		
 	}
+	
+	if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedListAvailableUpdates_$datetime.log" -Append }
 	
 	# Now we wait until all jobs have completed.
 	
@@ -391,6 +391,7 @@ if ($InstallUpdates)
 	Write-Host "Creating remote scheduled tasks..." -ForegroundColor Yellow
 	
 	$connectedComputers = @()
+	$failedComputerMessage = @()
 	
 	# We'll start by creating the remote script and XML files and scheduled tasks on each computer.
 	
@@ -400,8 +401,6 @@ if ($InstallUpdates)
 		
 		$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985"
 		$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986"
-		
-		$failedComputerMessage = @()
 		
 		if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 		{
@@ -450,8 +449,9 @@ if ($InstallUpdates)
 			$failedComputerMessage += "Unable to connect to $($computer.Name) to install updates."
 		}
 		
-		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedInstalledUpdates_$datetime.log" -Append }
 	}
+	
+	if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedInstalledUpdates_$datetime.log" -Append }
 	
 	$jobs = (Get-Job)
 	
@@ -579,12 +579,12 @@ if ($GetUpdateHistory)
 	
 	Write-Host "Gathering Windows Update history for $($remoteComputers.Count) devices..." -ForegroundColor Green
 	
+	$failedComputerMessage = @()
+	
 	foreach ($computer in $remoteComputers)
 	{
 		$tcpConnect = Test-TCPport -ComputerName $computer.Name -TCPport "5985"
 		$tcpConnectSec = Test-TCPport -ComputerName $computer.Name -TCPport "5986"
-		
-		$failedComputerMessage = @()
 		
 		if ($computer.Enabled -and ($tcpConnect -or $tcpConnectSec))
 		{
@@ -612,9 +612,9 @@ if ($GetUpdateHistory)
 			$failedComputerMessage += "Unable to connect to $($computer.Name) to get update history."
 		}
 		
-		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" -Append }
-		
 	}
+	
+	if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" -Append }
 	
 	$jobs = (Get-Job)
 	
