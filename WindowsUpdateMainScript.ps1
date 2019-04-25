@@ -232,7 +232,7 @@ foreach ($computer in $remoteComputers)
 		$failedComputerMessage += "Unable to connect to $($computer.Name) to install prerequisites."
 	}
 	
-	if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedPreReqInstall_$datetime.log" }
+	if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedPreReqInstall_$datetime.log" -Append }
 	
 }
 
@@ -324,7 +324,7 @@ if ($ListAvailableUpdates)
 			$failedComputerMessage += "Unable to connect to $($computer.Name) to retrieve available updates."
 		}
 		
-		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedListAvailableUpdates_$datetime.log" }
+		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedListAvailableUpdates_$datetime.log" -Append }
 		
 	}
 	
@@ -450,7 +450,7 @@ if ($InstallUpdates)
 			$failedComputerMessage += "Unable to connect to $($computer.Name) to install updates."
 		}
 		
-		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedInstalledUpdates_$datetime.log" }
+		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedInstalledUpdates_$datetime.log" -Append }
 	}
 	
 	$jobs = (Get-Job)
@@ -612,7 +612,7 @@ if ($GetUpdateHistory)
 			$failedComputerMessage += "Unable to connect to $($computer.Name) to get update history."
 		}
 		
-		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" }
+		if ($failedComputerMessage) { $failedComputerMessage | Out-File "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" -Append }
 		
 	}
 	
