@@ -202,7 +202,7 @@ if (-not (Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\$datetime" -ErrorActio
 	try { New-Item -ItemType Directory -Name "$datetime" -Path "$PSScriptRoot\WSUS_Reports\FailedConnections" -ErrorAction Stop }
 	catch { "Directory $PSScriptRoot\WSUS_Reports\FailedConnections\$datetime already exists or access is denied." }
 	
-	try { New-Item -ItemType Directory -Name "Archive" -Path "$PSScriptRoot\WSUS_Reports\Archive" -ErrorAction Stop }
+	try { New-Item -ItemType Directory -Name "Archive" -Path "$PSScriptRoot\WSUS_Reports" -ErrorAction Stop }
 	catch { "Directory $PSScriptRoot\WSUS_Reports\Archive already exists or access is denied." }
 	
 }
@@ -719,13 +719,13 @@ if ($SMTPSendMail)
 		
 		foreach ($item in $mailAttachments)
 		{
-			Compress-Archive -Path $item.FullName -update -DestinationPath "WSUS_Reports_$datetime.zip"
+			Compress-Archive -Path $item.FullName -update -DestinationPath "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip"
 		}
 		
 		try
 		{
 			Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
-							 -Subject 'WSUS Reports $datetime' `
+							 -Subject "WSUS Reports $datetime" `
 							 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
 							 -Credential $SMTPCredential -UseSsl -ErrorAction Stop
 		}
@@ -734,14 +734,17 @@ if ($SMTPSendMail)
 			"Unable to send email and attachment."
 		}
 		
-		try { Remove-Item $listUpdatesXLSX -Force } catch {"Unable to delete file."}
-		try { Remove-Item $updateHistorytXLSX -Force } catch { "Unable to delete file." }
-		try { Remove-Item $installedUpdatesXLSX -Force } catch { "Unable to delete file." }
-		try
-		{
-			Remove-Item "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" -Force
-		}
-		catch { "Unable to delete file." }
+		try { Remove-Item "$PSScriptRoot\WSUS_Reports\AvailableUpdateReports\$datetime\" -Recurse -Force -ErrorAction Stop }
+		catch {"Unable to delete Available Reports directory. Directory does not exist or access is denied."}
+		
+		try { Remove-Item "$PSScriptRoot\WSUS_Reports\UpdateHistoryReports\$datetime\" -Recurse -Force -ErrorAction Stop }
+		catch { "Unable to delete Update History directory. Directory does not exist or access is denied." }
+		
+		try { Remove-Item "$PSScriptRoot\WSUS_Reports\InstalledUpdateReports\$datetime\" -Recurse -Force -ErrorAction Stop }
+		catch { "Unable to delete Installed Updates directory. Directory does not exist or access is denied." }
+		
+		try { Remove-Item "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\" -Recurse -Force -ErrorAction Stop }
+		catch { "Unable to delete Failed Connections. Directory does not exist or access is denied." }
 	}
 	else
 	{
