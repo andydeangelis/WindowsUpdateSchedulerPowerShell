@@ -11,6 +11,9 @@
 	.PARAMETER Credential
 		Takes a PS Credential object to for remote authorization.
 	
+	.PARAMETER GetUpdateHistory
+		A description of the GetUpdateHistory parameter.
+	
 	.PARAMETER InstallUpdates
 		Switch parameter to confirm installing any updates found. Omitting this
 		simply installs the PSWindowsUpdate PS module.
@@ -19,7 +22,25 @@
 		Switch parameter to list all available updates and dump to a excel report.
 	
 	.PARAMETER NumJobs
-		A description of the NumJobs parameter.
+		Determines number of parallel jobs to run.
+	
+	.PARAMETER SMTPSendMail
+		A description of the SMTPSendMail parameter.
+	
+	.PARAMETER SMTPServer
+		The SMTP server address.
+	
+	.PARAMETER SMTPFromEmail
+		The email address from which to send the reports.
+	
+	.PARAMETER SMTPToEmail
+		The email address to which the reports are sent.
+	
+	.PARAMETER SMTPCredential
+		Credential for authenticating to the SMTP server.
+	
+	.PARAMETER SendMail
+		Switch specifying whether or not to send the reports as email attachemnts.
 	
 	.NOTES
 		===========================================================================
@@ -38,12 +59,20 @@ param
 	[System.Management.Automation.Credential()]
 	[ValidateNotNull()]
 	[System.Management.Automation.PSCredential]$Credential = [System.Management.Automation.PSCredential]::Empty,
-	[Parameter(Mandatory = $false)][switch]$GetUpdateHistory,
-	[Parameter(Mandatory = $false)][switch]$InstallUpdates,
-	[Parameter(Mandatory = $false)][switch]$ListAvailableUpdates,
+	[Parameter(Mandatory = $false)]
+	[switch]$GetUpdateHistory,
+	[Parameter(Mandatory = $false)]
+	[switch]$InstallUpdates,
+	[Parameter(Mandatory = $false)]
+	[switch]$ListAvailableUpdates,
 	[Parameter(Mandatory = $false)]
 	[ValidateRange(0, 256)]
-	[int]$NumJobs
+	[int]$NumJobs,
+	[switch]$SMTPSendMail,
+	[string]$SMTPServer,
+	[string]$SMTPFromEmail,
+	[string]$SMTPToEmail,
+	[System.Management.Automation.PSCredential]$SMTPCredential
 )
 
 # Source the function files.
@@ -172,6 +201,9 @@ if (-not (Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\$datetime" -ErrorActio
 	
 	try { New-Item -ItemType Directory -Name "$datetime" -Path "$PSScriptRoot\WSUS_Reports\FailedConnections" -ErrorAction Stop }
 	catch { "Directory $PSScriptRoot\WSUS_Reports\FailedConnections\$datetime already exists or access is denied." }
+	
+	try { New-Item -ItemType Directory -Name "Archive" -Path "$PSScriptRoot\WSUS_Reports\Archive" -ErrorAction Stop }
+	catch { "Directory $PSScriptRoot\WSUS_Reports\Archive already exists or access is denied." }
 	
 }
 
@@ -659,4 +691,60 @@ if ($GetUpdateHistory)
 		"Unable to create spreadsheet."
 	}
 	
+}
+
+# Generate the email if specified.
+
+# First, check if the minimum SMTP settings are not set.
+if ($SMTPSendMail)
+{
+	if ($SMTPFromEmail -and $SMTPToEmail -and $SMTPCredential -and $SMTPServer)
+	{
+		$mailAttachments = @()
+		
+		try { $mailAttachments += Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\AvailableUpdateReports\$datetime\" -ErrorAction Stop }
+		catch { "No Available Updates report." }
+		
+		try { $mailAttachments += Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\InstalledUpdateReports\$datetime\" -ErrorAction Stop }
+		catch { "No Installed Updates report." }
+		
+		try { $mailAttachments += Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\UpdateHistoryReports\$datetime\" -ErrorAction Stop }
+		catch { "No Update History report." }
+		
+		try { $mailAttachments += Get-ChildItem -Path "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\" -ErrorAction Stop }
+		catch { "No Failed Connections report." }
+		
+		try { New-Item "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" -ItemType File -ErrorAction Stop }
+		catch { "Unable to create compressed archive file." }
+		
+		foreach ($item in $mailAttachments)
+		{
+			Compress-Archive -Path $item.FullName -update -DestinationPath "WSUS_Reports_$datetime.zip"
+		}
+		
+		try
+		{
+			Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+							 -Subject 'WSUS Reports $datetime' `
+							 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
+							 -Credential $SMTPCredential -UseSsl -ErrorAction Stop
+		}
+		catch
+		{
+			"Unable to send email and attachment."
+		}
+		
+		try { Remove-Item $listUpdatesXLSX -Force } catch {"Unable to delete file."}
+		try { Remove-Item $updateHistorytXLSX -Force } catch { "Unable to delete file." }
+		try { Remove-Item $installedUpdatesXLSX -Force } catch { "Unable to delete file." }
+		try
+		{
+			Remove-Item "$PSScriptRoot\WSUS_Reports\FailedConnections\$datetime\FailedUpdateHistory_$datetime.log" -Force
+		}
+		catch { "Unable to delete file." }
+	}
+	else
+	{
+		Write-Host "Unable to send email: Missing parameters" -ForegroundColor Red
+	}
 }

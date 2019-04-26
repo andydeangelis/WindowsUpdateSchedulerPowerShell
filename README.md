@@ -13,6 +13,11 @@ Parameters:
 		-InstallUpdates: Optional switch parameter. Tells the script to install the updates it finds available. Generates an Excel report upon completion. 
 		-ListAvailableUpdates: Optional switch parameter. Lists the available updates to install. Generates an Excel report upon completion. 
 		-GetUpdateHistory: Optional switch parameter. Tells the script to install the updates it finds available. Generates an Excel report upon completion. 
+		-SMTPSendMail: Optional switch paramater to determine whether or not to send the report via email.
+		-SMTPServer: Required if SMTPSendMail is set. Specifies the SMTP server to send the report email.
+		-SMTPFromEmail: Required if SMTPSendMail is set. Email address from which to send email.
+		-SMTPToEmail: Required if SMTPSendMail is set. Email or distro list to which to send the report email.
+		-SMTPCredential: Required if SMTPSendMail is set. PSCredential object used to authenticate against the SMTP server.
 	
 Pre-reqs:
 
@@ -80,12 +85,17 @@ Main Script Usage (Manual Run)
 			PS> .\WindowsUpdateLauncher.ps1 -SearchBase "ou=Servers,dc=testdomain,dc=local" -Credential (Get-Credential) -GetUpdateHistory -NumJobs 4
 				- The above command will install all available updates to all enabled computer accounts in the Servers OU, and it will export the list of updates into an Excel spreadsheet.
 				
+		Example 5 (running manually, generate currently installed updates report and send email)
+		
+			PS> PS> .\WindowsUpdateLauncher.ps1 -SearchBase "ou=Servers,dc=testdomain,dc=local" -Credential (Get-Credential) -GetUpdateHistory -NumJobs 4 -SMTPSendMail -SMTPServer smtp.domain.com -SMTPFromEmail "sender@domain.com" -SMTPToEmail "IT-Team@domain.com" -SMTPCredential (Get-Credential)
+				
 Main Script Usage (Scheduled Task)
 
 	- You can also configure the script to run on a schedule (say, the third Wednesday of every month) by exporting credentials to a secured XML file for later use. There are some caveats regarding this:
 		- You generate the credential file by using the Export-Clixml cmdlet. Be sure to note where you place the resulting XML file.
 		
 			PS> (Get-Credential) | Export-Clixml WinUpdateDomainCreds.xml
+			PS> (Get-Credential) | Export-Clixml SMTPCreds.xml
 			
 		- Once created, you can use the XML file instead of haviung to enter credentials manually each time.
 		
