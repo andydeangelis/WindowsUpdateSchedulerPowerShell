@@ -37,7 +37,10 @@
 		The email address to which the reports are sent.
 	
 	.PARAMETER SMTPCredential
-		Credential for authenticating to the SMTP server.
+		OPTIONAL: Credential for authenticating to the SMTP server if the SMTP server requires username/password authentication.
+	
+	.PARAMETER SMTPUseSSL
+		A description of the SMTPUseSSL parameter.
 	
 	.PARAMETER SendMail
 		Switch specifying whether or not to send the reports as email attachemnts.
@@ -72,7 +75,8 @@ param
 	[string]$SMTPServer,
 	[string]$SMTPFromEmail,
 	[string]$SMTPToEmail,
-	[System.Management.Automation.PSCredential]$SMTPCredential
+	[System.Management.Automation.PSCredential]$SMTPCredential,
+	[switch]$SMTPUseSSL
 )
 
 # Source the function files.
@@ -698,7 +702,7 @@ if ($GetUpdateHistory)
 # First, check if the minimum SMTP settings are not set.
 if ($SMTPSendMail)
 {
-	if ($SMTPFromEmail -and $SMTPToEmail -and $SMTPCredential -and $SMTPServer)
+	if ($SMTPFromEmail -and $SMTPToEmail -and $SMTPServer)
 	{
 		$mailAttachments = @()
 		
@@ -724,10 +728,40 @@ if ($SMTPSendMail)
 		
 		try
 		{
-			Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
-							 -Subject "WSUS Reports $datetime" `
-							 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
-							 -Credential $SMTPCredential -UseSsl -ErrorAction Stop
+			if ($SMTPCredential)
+			{
+				if ($SMTPUseSSL)
+				{
+					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+									 -Subject "WSUS Reports $datetime" `
+									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
+									 -Credential $SMTPCredential -UseSsl -ErrorAction Stop
+				}
+				else
+				{
+					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+									 -Subject "WSUS Reports $datetime" `
+									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
+									 -Credential $SMTPCredential -ErrorAction Stop
+				}
+			}
+			else
+			{
+				if ($SMTPUseSSL)
+				{
+					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+									 -Subject "WSUS Reports $datetime" `
+									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
+									 -UseSsl -ErrorAction Stop
+				}
+				else
+				{
+					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+									 -Subject "WSUS Reports $datetime" `
+									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
+									 -ErrorAction Stop
+				}
+			}
 		}
 		catch
 		{

@@ -17,6 +17,7 @@ Parameters:
 		-SMTPServer: Required if SMTPSendMail is set. Specifies the SMTP server to send the report email.
 		-SMTPFromEmail: Required if SMTPSendMail is set. Email address from which to send email.
 		-SMTPToEmail: Required if SMTPSendMail is set. Email or distro list to which to send the report email.
+		-SMTPUseSSL: Switch parameter - Required if SMTP server uses SSL.
 		-SMTPCredential: Required if SMTPSendMail is set. PSCredential object used to authenticate against the SMTP server.
 	
 Pre-reqs:
