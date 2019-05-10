@@ -732,14 +732,14 @@ if ($SMTPSendMail)
 			{
 				if ($SMTPUseSSL)
 				{
-					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+					Send-MailMessage -SmtpServer "$SMTPServer" -From "$SMTPFromEmail" -To "$SMTPToEmail" `
 									 -Subject "WSUS Reports $datetime" `
 									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
 									 -Credential $SMTPCredential -UseSsl -ErrorAction Stop
 				}
 				else
 				{
-					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+					Send-MailMessage -SmtpServer "$SMTPServer" -From "$SMTPFromEmail" -To "$SMTPToEmail" `
 									 -Subject "WSUS Reports $datetime" `
 									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
 									 -Credential $SMTPCredential -ErrorAction Stop
@@ -749,14 +749,14 @@ if ($SMTPSendMail)
 			{
 				if ($SMTPUseSSL)
 				{
-					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+					Send-MailMessage -SmtpServer "$SMTPServer" -From "$SMTPFromEmail" -To "$SMTPToEmail" `
 									 -Subject "WSUS Reports $datetime" `
 									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
 									 -UseSsl -ErrorAction Stop
 				}
 				else
 				{
-					Send-MailMessage -SmtpServer $SMTPServer -From $SMTPFromEmail -To $SMTPToEmail `
+					Send-MailMessage -SmtpServer "$SMTPServer" -From "$SMTPFromEmail" -To "$SMTPToEmail" `
 									 -Subject "WSUS Reports $datetime" `
 									 -Attachments "$PSScriptRoot\WSUS_Reports\Archive\WSUS_Reports_$datetime.zip" `
 									 -ErrorAction Stop
